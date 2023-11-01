@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+Spring:
+  datasource:
+    url: jdbc:mariadb://locaphost:3306/user_registration
+    username: root
+    password: javman19
+    driver-class-name: org.mariadb.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
