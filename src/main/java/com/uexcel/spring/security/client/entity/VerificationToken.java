@@ -1,10 +1,10 @@
 package com.uexcel.spring.security.client.entity;
 
-import java.sql.Date;
 import java.util.Calendar;
+import java.util.Date;
 
-import org.hibernate.type.descriptor.java.LocalDateJavaType;
-
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -15,6 +15,7 @@ import jakarta.persistence.OneToOne;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Entity
 @Data
 @NoArgsConstructor
 public class VerificationToken {
@@ -23,15 +24,21 @@ public class VerificationToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long tokenId;
     private String token;
-    private Date takenExpirateTime;
+    private Date takenExpirateTime; // from java.util
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "FK_USER_VERIFICATION_TOKEN"))
     private User user;
 
     public VerificationToken(User user, String token) {
         super();
         this.user = user;
+        this.token = token;
+        this.takenExpirateTime = CalculateExpirationTime(EXPIRATIONTIME);
+    }
+
+    public VerificationToken(String token) {
+        super();
         this.token = token;
         this.takenExpirateTime = CalculateExpirationTime(EXPIRATIONTIME);
     }
