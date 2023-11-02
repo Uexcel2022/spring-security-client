@@ -1,4 +1,4 @@
-package com.uexcel.springs.ecurity.client.model;
+package com.uexcel.spring.security.client.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

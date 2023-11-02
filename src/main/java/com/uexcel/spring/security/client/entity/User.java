@@ -1,4 +1,4 @@
-package com.uexcel.springs.ecurity.client.entity;
+package com.uexcel.spring.security.client.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

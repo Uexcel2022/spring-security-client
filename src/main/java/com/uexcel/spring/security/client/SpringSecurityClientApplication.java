@@ -1,4 +1,4 @@
-package com.uexcel.springs.ecurity.client;
+package com.uexcel.spring.security.client;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
