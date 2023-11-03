@@ -3,9 +3,9 @@ server:
 
 Spring:
   datasource:
-    url: jdbc:mariadb://locaphost:3306/user_registration
+    url: jdbc:mariadb://localhost:3306/user_registration
     username: root
-    password: javman19
+    password: jvman19
     driver-class-name: org.mariadb.jdbc.Driver
   jpa:
     show-sql: true

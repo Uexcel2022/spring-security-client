@@ -1,12 +1,12 @@
 package com.uexcel.spring.security.client.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.support.ServletContextApplicationContextInitializer;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.support.HttpRequestHandlerServlet;
 
 import com.uexcel.spring.security.client.entity.User;
 import com.uexcel.spring.security.client.event.RegistrationCompleteEvent;
@@ -24,9 +24,22 @@ public class UserController {
     @Autowired
     private ApplicationEventPublisher publisher;
 
-    @Autowired
+    @GetMapping("/hello")
+    public String hello() {
+        return "Welcome to my first spring security application!!!";
+    }
 
-    @PostMapping("/registration")
+    @GetMapping("/verifyRegistration")
+    public String TokenValidation(@RequestParam("token") String token) {
+
+        String result = userService.validateVarificationToken(token);
+        if (result.equalsIgnoreCase("valid")) {
+            return "User varified successfully";
+        }
+        return "Bad user";
+    }
+
+    @PostMapping("/register")
     public String registration(@RequestBody UserModel userModel, final HttpServletRequest request) {
         if (userModel.getPassword().equals(userModel.getMatchingPassword())) {
             User user = userService.savaUser(userModel);

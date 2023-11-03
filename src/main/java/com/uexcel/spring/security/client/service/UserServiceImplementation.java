@@ -1,5 +1,7 @@
 package com.uexcel.spring.security.client.service;
 
+import java.util.Calendar;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,10 +14,7 @@ import com.uexcel.spring.security.client.repository.VerificationTokenRepository;
 
 @Service
 public class UserServiceImplementation implements UserService {
-
-    @Autowired
-    private User user;
-
+    User user = new User();
     @Autowired
     private UserRepository userRepository;
 
@@ -40,6 +39,27 @@ public class UserServiceImplementation implements UserService {
     public void saveUserVerificationToken(User user, String token) {
         VerificationToken verificationToken = new VerificationToken(user, token);
         userTokenRepository.save(verificationToken);
+    }
+
+    public String validateVarificationToken(String token) {
+        VerificationToken usertoken = userTokenRepository.findByToken(token);
+
+        if (usertoken == null) {
+            return "Bad user";
+        }
+
+        User user = usertoken.getUser();
+
+        Calendar calendar = Calendar.getInstance();
+        if (usertoken.getTakenExpirateTime().getTime() - calendar.getTime().getTime() <= 0) {
+            userTokenRepository.delete(usertoken);
+            return "Expired";
+        }
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        return "valid";
     }
 
 }
