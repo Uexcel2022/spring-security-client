@@ -1,5 +1,7 @@
 package com.uexcel.spring.security.client.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,5 +13,5 @@ import com.uexcel.spring.security.client.entity.VerificationToken;
 public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Long> {
 
     @Query("SELECT s FROM VerificationToken s WHERE  s.token =:token")
-    public VerificationToken findByToken(@Param("token") String token);
+    public List<VerificationToken> findByToken(@Param("token") String token);
 }

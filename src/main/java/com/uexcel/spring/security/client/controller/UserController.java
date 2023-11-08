@@ -29,16 +29,6 @@ public class UserController {
         return "Welcome to my first spring security application!!!";
     }
 
-    @GetMapping("/verifyRegistration")
-    public String TokenValidation(@RequestParam("token") String token) {
-
-        String result = userService.validateVarificationToken(token);
-        if (result.equalsIgnoreCase("valid")) {
-            return "User varified successfully";
-        }
-        return "Bad user";
-    }
-
     @PostMapping("/register")
     public String registration(@RequestBody UserModel userModel, final HttpServletRequest request) {
         if (userModel.getPassword().equals(userModel.getMatchingPassword())) {
@@ -51,6 +41,22 @@ public class UserController {
 
         }
         return "Password does not match!!!";
+
+    }
+
+    @GetMapping("/verifyRegistration")
+    public String TokenValidation(@RequestParam("token") String token) {
+
+        String result = userService.validateVarificationToken(token);
+        if (result.equalsIgnoreCase("valid")) {
+            return "User varified successfully";
+        }
+        return "Bad user";
+    }
+
+    @GetMapping("/resendVerificationToken")
+    public String resendVerifyRegistrationToken(@RequestParam("token") String token, HttpServletRequest request) {
+        return userService.resentToken(token, applicationUrl(request));
 
     }
 

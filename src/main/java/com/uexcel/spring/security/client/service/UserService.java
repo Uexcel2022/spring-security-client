@@ -11,4 +11,6 @@ public interface UserService {
 
     String validateVarificationToken(String token);
 
+    String resentToken(String token, String applicationUrl);
+
 }

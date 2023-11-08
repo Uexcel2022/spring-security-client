@@ -1,6 +1,8 @@
 package com.uexcel.spring.security.client.service;
 
 import java.util.Calendar;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +14,9 @@ import com.uexcel.spring.security.client.model.UserModel;
 import com.uexcel.spring.security.client.repository.UserRepository;
 import com.uexcel.spring.security.client.repository.VerificationTokenRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class UserServiceImplementation implements UserService {
     User user = new User();
@@ -42,17 +47,18 @@ public class UserServiceImplementation implements UserService {
     }
 
     public String validateVarificationToken(String token) {
-        VerificationToken usertoken = userTokenRepository.findByToken(token);
+        List<VerificationToken> usertoken = userTokenRepository.findByToken(token);
 
-        if (usertoken == null) {
+        if (usertoken.isEmpty()) {
             return "Bad user";
         }
 
-        User user = usertoken.getUser();
+        VerificationToken obj = usertoken.get(0);
+        User user = obj.getUser();
 
         Calendar calendar = Calendar.getInstance();
-        if (usertoken.getTakenExpirateTime().getTime() - calendar.getTime().getTime() <= 0) {
-            userTokenRepository.delete(usertoken);
+        if (obj.getTakenExpirateTime().getTime() - calendar.getTime().getTime() <= 0) {
+            userTokenRepository.delete(obj);
             return "Expired";
         }
 
@@ -60,6 +66,32 @@ public class UserServiceImplementation implements UserService {
         userRepository.save(user);
 
         return "valid";
+    }
+
+    @Override
+    public String resentToken(String token, String applicationUrl) {
+        List<VerificationToken> verificationToken = userTokenRepository.findByToken(token);
+        if (verificationToken.isEmpty()) {
+            return "Bad user";
+
+        }
+
+        VerificationToken oldToken = verificationToken.get(0);
+
+        VerificationToken newToken = new VerificationToken(UUID.randomUUID().toString());
+
+        oldToken.setToken(newToken.getToken());
+
+        oldToken.setTakenExpirateTime(newToken.getTakenExpirateTime());
+
+        userTokenRepository.save(oldToken);
+
+        String url = applicationUrl +
+                "/verifyRegistration?token=" + token;
+
+        log.info("Click the link to verify your account: {}", url);
+
+        return "Varification link has been sent to your email";
     }
 
 }

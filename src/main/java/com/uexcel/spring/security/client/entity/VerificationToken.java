@@ -50,4 +50,9 @@ public class VerificationToken {
         calendar.add(Calendar.MINUTE, expirationTime);
         return new Date(calendar.getTime().getTime());
     }
+
+    // public VerificationToken verificationToken(String token) {
+    // return new VerificationToken(token);
+
+    // }
 }
