@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
@@ -13,43 +14,42 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.SequenceGenerator;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Data
 @NoArgsConstructor
-public class VerificationToken {
-
+public class ResetToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long tokenId;
+    @Column(nullable = false)
     private String token;
-    private Date takenExpirateTime; // from java.util
+    @Column(nullable = false)
+    private Date expirationTime;
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "FK_USER_VERIFICATION_TOKEN"))
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "FK_USER_IN_RESET_TOKEN"), nullable = false)
     private User user;
 
-    public VerificationToken(User user) {
-        super();
+    public ResetToken(User user) {
         this.user = user;
         this.token = UUID.randomUUID().toString();
-        this.takenExpirateTime = expiryTime();
+        this.expirationTime = ExpiryTime();
     }
 
-    public VerificationToken(String token) {
-        super();
+    public ResetToken(String token) {
         this.token = token;
-        this.takenExpirateTime = expiryTime();
+        this.expirationTime = ExpiryTime();
     }
 
-    private Date expiryTime() {
-        // expiration time = 10 min
+    private Date ExpiryTime() {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(new Date().getTime());
         calendar.add(Calendar.MINUTE, 10);
+
         return new Date(calendar.getTime().getTime());
     }
-
 }

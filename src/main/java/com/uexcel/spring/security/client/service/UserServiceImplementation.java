@@ -2,15 +2,22 @@ package com.uexcel.spring.security.client.service;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.uexcel.spring.security.client.entity.ChangeEmail;
+import com.uexcel.spring.security.client.entity.ResetToken;
 import com.uexcel.spring.security.client.entity.User;
 import com.uexcel.spring.security.client.entity.VerificationToken;
+import com.uexcel.spring.security.client.model.ChangeEmailModel;
 import com.uexcel.spring.security.client.model.UserModel;
+import com.uexcel.spring.security.client.model.UserResetModel;
+import com.uexcel.spring.security.client.repository.ChangeEmailRepository;
+import com.uexcel.spring.security.client.repository.ResetTokenRepository;
 import com.uexcel.spring.security.client.repository.UserRepository;
 import com.uexcel.spring.security.client.repository.VerificationTokenRepository;
 
@@ -29,6 +36,12 @@ public class UserServiceImplementation implements UserService {
     @Autowired
     VerificationTokenRepository userTokenRepository;
 
+    @Autowired
+    ResetTokenRepository resetTokenRepository;
+
+    @Autowired
+    ChangeEmailRepository changeEmailRepository;
+
     @Override
     public User savaUser(UserModel userModel) {
         user.setFirstName(userModel.getFirstName());
@@ -41,9 +54,12 @@ public class UserServiceImplementation implements UserService {
     }
 
     @Override
-    public void saveUserVerificationToken(User user, String token) {
-        VerificationToken verificationToken = new VerificationToken(user, token);
+    public String saveUserVerificationToken(User user) {
+        VerificationToken verificationToken = new VerificationToken(user);
         userTokenRepository.save(verificationToken);
+        ResetToken resetToken = new ResetToken(user);
+        resetTokenRepository.save(resetToken);
+        return verificationToken.getToken();
     }
 
     public String validateVarificationToken(String token) {
@@ -65,7 +81,7 @@ public class UserServiceImplementation implements UserService {
         user.setEnabled(true);
         userRepository.save(user);
 
-        return "valid";
+        return "You have been verified successfully";
     }
 
     @Override
@@ -92,6 +108,159 @@ public class UserServiceImplementation implements UserService {
         log.info("Click the link to verify your account: {}", url);
 
         return "Varification link has been sent to your email";
+    }
+
+    @Override
+    public String reset(UserResetModel userResetModel, String applicationUrl, String servletPath) {
+        User user = userRepository.findByEmail(userResetModel.getEmail());
+
+        if (user == null) {
+            return "In valid email";
+        }
+        Optional<ResetToken> resetToken = resetTokenRepository.findByUserId(user.getUserId());
+
+        if (resetToken.isPresent() &&
+                (servletPath.equals("/resetPassword") || servletPath.equals("/ResendResetPasswordToken"))) {
+            ResetToken oldToken = resetToken.get();
+            String url = applicationUrl + "/resetPassword/" + processToken(oldToken).getToken();
+            log.info("Click on the link to reset password {}", url);
+
+            return "Password reset link has been sent to your email";
+        }
+
+        if (servletPath.equals("/changePassword")) {
+            boolean isValidPassword = validPassword(userResetModel, user);
+            if (isValidPassword) {
+                user.setPassword(passwordEncoder.encode(userResetModel.getNewPassword()));
+                userRepository.save(user);
+                // send mail your pass was changed to the user -----
+                return "Your password has been changed successfully";
+            }
+        }
+
+        if (servletPath.equals("/changeName")) {
+            boolean isValidPassword = validPassword(userResetModel, user);
+            if (isValidPassword) {
+                if (userResetModel.getFirstName() != null) {
+                    user.setFirstName(userResetModel.getFirstName());
+                }
+                if (userResetModel.getLastName() != null) {
+                    user.setLastName(userResetModel.getLastName());
+                }
+                userRepository.save(user);
+
+                return "Update successfull";
+            }
+
+        }
+
+        return "Invalid email";
+    }
+
+    @Override
+    public String resetPassword(String password, String token) {
+        Optional<ResetToken> resetToken = resetTokenRepository.findByToken(token);
+        if (resetToken.isPresent()) {
+            Calendar calendar = Calendar.getInstance();
+            if (resetToken.get().getExpirationTime().getTime() -
+                    calendar.getTime().getTime() <= 0) {
+                return "Expired";
+            }
+
+            User user = resetToken.get().getUser();
+            user.setPassword(passwordEncoder.encode(password));
+            userRepository.save(user);
+            ResetToken oldToken = resetToken.get();
+            processToken(oldToken);
+            return "Password has been reset successfully";
+        }
+        return "Bad Request";
+    }
+
+    @Override
+    public String resetEmail(ChangeEmailModel changeEmailModel, String applicationUrl) {
+
+        User user = userRepository.findByEmail(changeEmailModel.getOldEmail());
+        if (user != null && changeEmailModel.getNewEmail() != null) {
+            String token = UUID.randomUUID().toString();
+            ChangeEmail changeEmail = new ChangeEmail(changeEmailModel.getNewEmail(),
+                    user.getUserId(), token);
+            changeEmailRepository.save(changeEmail);
+
+            String url = applicationUrl + "/changeEmail?token=" + token;
+
+            log.info("Click the link to reset your password {}", url);
+
+            return "You have been sent an email";
+        }
+        return "Bad Request";
+    }
+
+    @Override
+    public String EmailChangeValidation(String token, String applicationUrl) {
+        Optional<ChangeEmail> changeEmail = changeEmailRepository.findByOldEmailToken(token);
+        if (changeEmail.isPresent()) {
+            Calendar calendar = Calendar.getInstance();
+            if (changeEmail.get().getExpirationTime().getTime() -
+                    calendar.getTime().getTime() <= 0) {
+                return "Expired";
+            }
+            String tkn = UUID.randomUUID().toString();
+            ChangeEmail newEmailToken = new ChangeEmail(tkn);
+            changeEmail.get().setNewEmailtoken(newEmailToken.getNewEmailtoken());
+            changeEmail.get().setExpirationTime(newEmailToken.getExpirationTime());
+            changeEmailRepository.save(changeEmail.get());
+            String url = applicationUrl + "saveNewEmail?token=" + tkn;
+
+            log.info("Click the link to reset your password {}", url);
+
+            return "You have been sent an email to your new email";
+
+        }
+
+        return "Bad Requst";
+
+    }
+
+    @Override
+    public String saveNewEmail(String token) {
+
+        Optional<ChangeEmail> changeEmail = ChangeEmailRepository.findByToken(token);
+
+        if (changeEmail.isPresent()) {
+
+            Calendar calendar = Calendar.getInstance();
+            if (changeEmail.get().getExpirationTime().getTime() -
+                    calendar.getTime().getTime() <= 0) {
+                return "Expired";
+            }
+
+            Optional<User> user = userRepository.findById(changeEmail.get().getTargetId());
+
+            if (user.isPresent()) {
+                User obj = user.get();
+                obj.setEmail(changeEmail.get().getNewEmail());
+                changeEmailRepository.delete(changeEmail.get());
+                return "Your email has been changed sucessfully";
+            } else {
+                return "We encountered error unable to fulfill your request";
+            }
+
+        }
+        return "Bad Requst";
+    }
+
+    private ResetToken processToken(ResetToken oldToken) {
+        ResetToken newToken = new ResetToken(UUID.randomUUID().toString());
+        oldToken.setToken(newToken.getToken());
+        oldToken.setExpirationTime(newToken.getExpirationTime());
+        resetTokenRepository.save(oldToken);
+        return oldToken;
+    }
+
+    private boolean validPassword(UserResetModel userResetModel, User user) {
+
+        return passwordEncoder.matches(userResetModel.getPassword(), user.getPassword());
     }
 
 }
