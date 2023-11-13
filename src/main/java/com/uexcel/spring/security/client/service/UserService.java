@@ -1,6 +1,5 @@
 package com.uexcel.spring.security.client.service;
 
-import com.uexcel.spring.security.client.entity.ChangeEmail;
 import com.uexcel.spring.security.client.entity.User;
 import com.uexcel.spring.security.client.model.ChangeEmailModel;
 import com.uexcel.spring.security.client.model.UserModel;

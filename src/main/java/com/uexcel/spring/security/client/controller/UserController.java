@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String registration(@RequestBody UserModel userModel, final HttpServletRequest request) {
+    public String register(@RequestBody UserModel userModel, final HttpServletRequest request) {
         if (userModel.getPassword().equals(userModel.getMatchingPassword())) {
             User user = userService.savaUser(userModel);
             publisher.publishEvent(new RegistrationCompleteEvent(
@@ -77,7 +77,7 @@ public class UserController {
 
     }
 
-    @PostMapping("/ResendResetPasswordToken")
+    @PostMapping("/resendResetPasswordToken")
     public String ResendResetPasswordToken(@RequestBody UserResetModel resetModel, HttpServletRequest request) {
         return userService.reset(resetModel, applicationUrl(request),
                 request.getServletPath());

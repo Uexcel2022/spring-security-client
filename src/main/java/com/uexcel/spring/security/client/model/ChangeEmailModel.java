@@ -11,4 +11,5 @@ public class ChangeEmailModel {
     private String newEmail;
     private String oldEmailtoken;
     private String newEmailtoken;
+    private String password;
 }

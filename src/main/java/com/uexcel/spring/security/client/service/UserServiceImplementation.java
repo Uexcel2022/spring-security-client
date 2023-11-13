@@ -182,6 +182,11 @@ public class UserServiceImplementation implements UserService {
 
         User user = userRepository.findByEmail(changeEmailModel.getOldEmail());
         if (user != null && changeEmailModel.getNewEmail() != null) {
+            boolean isvalid = passwordEncoder.matches(changeEmailModel.getPassword(),
+                    user.getPassword());
+            if (!isvalid) {
+                return "The login credentials are in valid";
+            }
             String token = UUID.randomUUID().toString();
             ChangeEmail changeEmail = new ChangeEmail(changeEmailModel.getNewEmail(),
                     user.getUserId(), token);
@@ -189,7 +194,7 @@ public class UserServiceImplementation implements UserService {
 
             String url = applicationUrl + "/changeEmail?token=" + token;
 
-            log.info("Click the link to reset your password {}", url);
+            log.info("Click the link for verification {}", url);
 
             return "You have been sent an email";
         }
@@ -198,7 +203,7 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public String EmailChangeValidation(String token, String applicationUrl) {
-        Optional<ChangeEmail> changeEmail = changeEmailRepository.findByOldEmailToken(token);
+        Optional<ChangeEmail> changeEmail = changeEmailRepository.FindByOldEmailToken(token);
         if (changeEmail.isPresent()) {
             Calendar calendar = Calendar.getInstance();
             if (changeEmail.get().getExpirationTime().getTime() -
@@ -210,9 +215,9 @@ public class UserServiceImplementation implements UserService {
             changeEmail.get().setNewEmailtoken(newEmailToken.getNewEmailtoken());
             changeEmail.get().setExpirationTime(newEmailToken.getExpirationTime());
             changeEmailRepository.save(changeEmail.get());
-            String url = applicationUrl + "saveNewEmail?token=" + tkn;
+            String url = applicationUrl + "/saveNewEmail?token=" + tkn;
 
-            log.info("Click the link to reset your password {}", url);
+            log.info("Click the link for verification {}", url);
 
             return "You have been sent an email to your new email";
 
@@ -225,7 +230,7 @@ public class UserServiceImplementation implements UserService {
     @Override
     public String saveNewEmail(String token) {
 
-        Optional<ChangeEmail> changeEmail = ChangeEmailRepository.findByToken(token);
+        Optional<ChangeEmail> changeEmail = changeEmailRepository.FindByNewEmailToken(token);
 
         if (changeEmail.isPresent()) {
 
